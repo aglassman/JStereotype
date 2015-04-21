@@ -24,19 +24,25 @@ public class AnnotationEntityStereotyper<T> implements IEntityStereotyper<T> {
 	private final Collection<IPropertyDescriptor> requiredProperties;
 	private final IPropertyExtractor propertyExtractor;
 	private final IDynamicEntityLoader dynamicEntityLoader;
-	
-	
-	public AnnotationEntityStereotyper(Class<T> stereotypeClass,Collection<IPropertyDescriptor> buildableProperties, IPropertyExtractor propertyExtractor, IDynamicEntityClassModifier classModifier, IDynamicEntityLoader dynamicEntityLoader) {
+	private final Collection<String> requiredPropertyNames;
+
+	public AnnotationEntityStereotyper(Class<T> stereotypeClass,
+			Collection<IPropertyDescriptor> buildableProperties,
+			IPropertyExtractor propertyExtractor,
+			IDynamicEntityClassModifier classModifier,
+			IDynamicEntityLoader dynamicEntityLoader) {
 		this.classModifier = classModifier;
-		this.modifiedClass = (Class<? extends T>)classModifier.createModifiedSubclass(stereotypeClass);
+		this.modifiedClass = (Class<? extends T>) classModifier
+				.createModifiedSubclass(stereotypeClass);
 		this.propertyExtractor = propertyExtractor;
 		this.stereotypeProperties = buildableProperties;
 		this.requiredProperties = stereotypeProperties.stream()
 				.filter(stereotypeProperty -> !stereotypeProperty.isRequired())
 				.collect(Collectors.toList());
 		this.dynamicEntityLoader = dynamicEntityLoader;
+		this.requiredPropertyNames = requiredProperties.stream().map(propertyDescriptor -> propertyDescriptor.getPropetyName()).collect(Collectors.toList());
 	}
-	
+
 	@Override
 	public T create() {
 		try {
@@ -52,63 +58,73 @@ public class AnnotationEntityStereotyper<T> implements IEntityStereotyper<T> {
 	@Override
 	public IDynamicEntity createStereotypedDynamicEntity() {
 		IDynamicEntity de = new HashMapDynamicEntity();
-		stereotypeProperties.stream()
-			.forEach(propertyDescriptor -> {
-				de.setProperty(propertyDescriptor.getPropetyName(),null);
-			});
+		stereotypeProperties.stream().forEach(propertyDescriptor -> {
+			de.setProperty(propertyDescriptor.getPropetyName(), null);
+		});
 		return de;
 	}
 
 	@Override
 	public boolean meetsStereotype(Object object) {
-		if(modifiedClass.getClass().isAssignableFrom(object.getClass()))
-		{
+		if (modifiedClass.getClass().isAssignableFrom(object.getClass())) {
 			return true;
-		}			
-		
-		return propertyExtractor.extract(object.getClass()).containsAll(requiredProperties);
-		
+		} else if (object instanceof IDynamic) {
+			return meetsStereotype(((IDynamic) object).getDynamicEntity());
+		} else if(object instanceof IDynamicEntity)
+		{
+			return meetsStereotype((IDynamicEntity)object);
+		}
+
+		return propertyExtractor.extract(object.getClass()).containsAll(
+				requiredProperties);
+
+	}
+	
+	public boolean meetsStereotype(IDynamicEntity de)
+	{
+		return de.getPropertyMap().keySet().containsAll(requiredPropertyNames);
 	}
 
 	@Override
 	public T stereotype(Object object) {
-		
-		if(object instanceof IDynamic)
-		{
-			return loadFromDynamicEntity(((IDynamic)object).getDynamicEntity());
+
+		if (object instanceof IDynamic) {
+			return loadFromDynamicEntity(((IDynamic) object).getDynamicEntity());
 		}
-		
-		if(object instanceof IDynamicEntity)
-		{
-			 return loadFromDynamicEntity((IDynamicEntity)object);
+
+		if (object instanceof IDynamicEntity) {
+			return loadFromDynamicEntity((IDynamicEntity) object);
 		}
-		
+
 		return loadFromNonDynamicEntity(object);
-		
+
 	}
 
 	private T loadFromNonDynamicEntity(Object object) {
-		final List<IPropertyDescriptor> objectProperties = new ArrayList<>(propertyExtractor.extract(object.getClass()));
-		
-		T t = getNewInstance();
-		
-		if(t == null)
+		final List<IPropertyDescriptor> objectProperties = new ArrayList<>(
+				propertyExtractor.extract(object.getClass()));
+
+		T t = getNewInstance(null);
+
+		if (t == null)
 			return null;
-		
-		stereotypeProperties.stream()
-			.forEach(propertyDescriptor -> {
-				int objectFieldIndex = objectProperties.indexOf(propertyDescriptor);
-				if(objectFieldIndex > -1)
-				{
-					Object value = getPropertyValue(object, objectProperties.get(objectFieldIndex));
-					setPropertyValue(t, propertyDescriptor, value);
-				}
-			});
-		
+
+		stereotypeProperties.stream().forEach(
+				propertyDescriptor -> {
+					int objectFieldIndex = objectProperties
+							.indexOf(propertyDescriptor);
+					if (objectFieldIndex > -1) {
+						Object value = getPropertyValue(object,
+								objectProperties.get(objectFieldIndex));
+						setPropertyValue(t, propertyDescriptor, value);
+					}
+				});
+
 		return t;
 	}
 
-	private void setPropertyValue(T target, IPropertyDescriptor propertyDescriptor, Object value) {
+	private void setPropertyValue(T target,
+			IPropertyDescriptor propertyDescriptor, Object value) {
 		try {
 			propertyDescriptor.field().set(target, value);
 		} catch (IllegalArgumentException e) {
@@ -118,7 +134,8 @@ public class AnnotationEntityStereotyper<T> implements IEntityStereotyper<T> {
 		}
 	}
 
-	private Object getPropertyValue(Object target, final IPropertyDescriptor propertyDescriptor) {
+	private Object getPropertyValue(Object target,
+			final IPropertyDescriptor propertyDescriptor) {
 		try {
 			return propertyDescriptor.field().get(target);
 		} catch (IllegalArgumentException e) {
@@ -126,55 +143,62 @@ public class AnnotationEntityStereotyper<T> implements IEntityStereotyper<T> {
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 		}
-		
+
 		return null;
 	}
 
-	private T loadFromDynamicEntity(IDynamicEntity object)  {
-		
-		T t = getNewInstance();
-		
-		if(t == null)
+	private T loadFromDynamicEntity(IDynamicEntity object) {
+
+		T t = getNewInstance(object);
+
+		if (t == null)
 			return null;
-		
-		stereotypeProperties.stream()
-			.forEach(propertyDescriptor -> {
-				try {
-					if(IPropertyDescriptor.isIEntityProperty(propertyDescriptor))
-					{
-						propertyDescriptor.field().set(t, new Property(propertyDescriptor.getPropetyName(),object));
-					} 
-					else 
-					{
-						propertyDescriptor.field().set(t, object.getProperty(propertyDescriptor.getPropetyName()));						
+
+		stereotypeProperties.stream().forEach(
+				propertyDescriptor -> {
+					try {
+						if (IPropertyDescriptor
+								.isIEntityProperty(propertyDescriptor)) {
+							propertyDescriptor.field().set(
+									t,
+									new Property(propertyDescriptor
+											.getPropetyName(), object));
+						} else {
+							propertyDescriptor.field().set(
+									t,
+									object.getProperty(propertyDescriptor
+											.getPropetyName()));
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			});
-		
+				});
+
 		return t;
 	}
 
-	private T getNewInstance() {
+	private T getNewInstance(IDynamicEntity de) {
 		try {
-			return modifiedClass.newInstance();
+			if (de == null) {
+				return modifiedClass.newInstance();
+			} else {
+				return modifiedClass.getConstructor(IDynamicEntity.class)
+						.newInstance(de);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
-		} 
+		}
 	}
 
 	@Override
 	public IStereotypeLoader<T> getLoader() {
-		return new StereotypeLoader<T>(this,dynamicEntityLoader);
+		return new StereotypeLoader<T>(this, dynamicEntityLoader);
 	}
 
 	@Override
 	public Collection<IPropertyDescriptor> getStereotypeProperties() {
 		return stereotypeProperties;
 	}
-	
-
 
 }

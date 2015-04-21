@@ -54,6 +54,7 @@ public class AnnotationEntityStereotyperTest {
 	//Does not meet stereotype (required fields missing)
 	public static class BadObject {
 		TestValueObject testValueObject;
+		Integer count;
 	}
 
 	IPropertyExtractor extractor = new ReflectionPropertyExtractor();
@@ -216,6 +217,24 @@ public class AnnotationEntityStereotyperTest {
 		assertEquals(Integer.valueOf(100), Integer.valueOf(myObject.testValueObject.attackCount));
 		assertEquals(Float.valueOf(10.42f), Float.valueOf(myObject.testValueObject.damage));
 		assertEquals(Boolean.valueOf(true), myObject.testValueObject.needsRepair);
+		
+	}
+	
+	@Test
+	public void testInteger()
+	{
+		IEntityStereotyper<BadObject> boStereotyper = EntityStereotyperFactory.create(BadObject.class);
+		
+		IDynamicEntity de = new HashMapDynamicEntity();
+		de.setProperty("count", 6);
+		de.setProperty("testValueObject", new TestValueObject());
+		
+		BadObject bo = boStereotyper.stereotype(de);
+		assertEquals(Integer.valueOf(6),bo.count);
+		
+		de.setProperty("count", 7);
+		
+		assertEquals(Integer.valueOf(6),bo.count);
 		
 	}
 	
