@@ -1,0 +1,17 @@
+{
+	"foodProperties" : { 
+		"foodValue" : 10 
+	},
+	
+	"stackableProperties" : {
+		"quantity" : 3,
+		"stackable" : true
+	},
+	
+	"weaponProperties" : {
+		"isRanged" : false,
+		"damage" : 5,
+		"cooldown" : 1
+	}
+	
+}

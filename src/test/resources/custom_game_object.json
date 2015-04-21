@@ -1,0 +1,10 @@
+{
+	"friction" : 10.002 ,
+	"count" : 10 ,
+	"result" : 10.92378	,
+	"testValueObject" : {
+		"attackCount" : 100,
+		"damage" : 10.42,
+		"needsRepair" : true
+	}
+}
