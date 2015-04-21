@@ -12,9 +12,9 @@ public interface IEntityStereotyper<T> {
 
 	IDynamicEntity createStereotypedDynamicEntity();
 
-	boolean meetsStereotype(Object dynamicEntity);
+	boolean meetsStereotype(Object object);
 	
-	T stereotype(Object dynamicEntity);
+	T stereotype(Object object);
 	
 	IStereotypeLoader<T> getLoader();
 	
