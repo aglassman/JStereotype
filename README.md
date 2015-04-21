@@ -7,6 +7,8 @@ See  src/test/java/org/gmjm/stereotype.example.Example for an example of how to 
 
 JStereotype could be thought of a type of dependency injector, but it is not intended to be used as such.
 
+The library uses reflection and byte code manipulation to create subclasses of your existing classes.  These enhanced classes are backed by a backing entity (IDynamicEntity).  This entity can be thought of as a map of properties.  When you stereotype an IDynamicEntity, the properties in the map are automatically set in the objects attributes.  The names of your object's field attributes are used to extract the objects out of the map.  Since this operation is only done upon stereotyping, this makes your objects fast, as all operations are done via direct propety access.  
+
 The basic idea is that you could have 3 different services that all consume IDynamic objects.  The service can use the appropriate StereotypeFactory to determine if IDynamic has the necessary properties to act on.  If it does, the service stereotypes the IDynamic object to the usable Stereotype object and then continues operation.
 
 It is easy to turn any class into a stereotyped class:
