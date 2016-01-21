@@ -1,4 +1,4 @@
-![Build Badge](https://travis-ci.org/aglassman/JStereotype.svg?branch=master)
+![Build Badge](https://travis-ci.org/aglassman/JStereotype.svg?branch=master)(https://travis-ci.org/aglassman/JStereotype)
 
 JStereotype is a library that gives you the ability to flatten class hierarchies.  This ability also gives you greater flexibility in mixing up object composition at runtime.
 
