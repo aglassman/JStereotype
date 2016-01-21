@@ -14,7 +14,6 @@ import javassist.CtMethod;
 import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 
-import org.gmjm.stereotype.JavaAssistDynamicEntityClassModifierTest.ModifyMe;
 import org.gmjm.stereotype.annotation.Stereotype;
 
 public class JavaAssistDynamicEntityClassModifier implements IDynamicEntityClassModifier{
